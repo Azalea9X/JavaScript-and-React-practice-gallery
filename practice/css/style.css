@@ -1,0 +1,20 @@
+.grid{
+    display: grid; 
+    background-color: black; grid-template-columns: 1fr 1fr 1fr; 
+grid-gap: 100px; row-gap: 50px;
+}
+
+div[class^="square"]{
+    min-height: 50px;
+    background-color: blue;min-width: 100px !important;
+    width: 150px;border: 1px solid black;
+}
+
+.hit {
+    background-image: url("./../images/boeing-747\(2\).jpg");
+    background-size:contain;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+  }
+  
+  /*Images generated with Dall-E*/ 
