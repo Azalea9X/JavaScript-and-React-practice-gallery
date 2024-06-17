@@ -15,6 +15,13 @@ div[class^="square"]{
 padding-top: 30px;
 }
 
+div[class^="square"]:focus{
+    background-color: green;
+}
+
+.normal {
+    background-color: blue;
+}
 .miss{
     
 }
