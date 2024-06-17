@@ -28,7 +28,7 @@ function createPerson(name, age, city) {
   let person1 = createPerson("Alice", 30, "New York");
   person1.greet(); // Output: Hello, my name is Alice and I am from New York.
 
-  function updateAge(person, newAge) {
+  function updateAge(person, newAge, name, location) {
     /*
      This function updates the age property of a Person object.
   
@@ -39,6 +39,8 @@ function createPerson(name, age, city) {
   
     person.age = newAge;
     console.log(`${person.name}'s new age is ${person.age}.`);
+    person.name = name; 
+    person.location
   }
   
   // Example usage:
