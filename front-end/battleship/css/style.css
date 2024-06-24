@@ -1,0 +1,36 @@
+.grid{
+
+    display: grid; 
+ grid-template-columns: 1fr 1fr 1fr; 
+grid-gap: 100px; row-gap: 50px;
+color: white; text-align: center;
+vertical-align: center;margin: 0 auto;
+background-image: url("./../images/background.svg");
+}
+
+div[class^="square"]{
+    min-height: 50px;
+    background-color: blue;min-width: 100px !important;
+    width: 150px;border: 1px solid black;
+padding-top: 30px;
+}
+
+div[class^="square"]:focus{
+    background-color: green;
+}
+
+.normal {
+    background-color: blue;
+}
+.miss{
+    
+}
+
+.hit {
+    background-image: url("./../images/boeing-747\(2\).jpg");
+    background-size:contain;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+  }
+  
+  /*Images generated with Dall-E*/ 
