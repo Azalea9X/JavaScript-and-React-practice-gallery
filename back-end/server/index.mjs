@@ -6,9 +6,41 @@ import fetch from "node-fetch";
 import mysql from "mysql2";
 import axios from "axios"; 
 import bodyParser from "body-parser";
-import {createCats, updateCats, deleteCats} from "./database.mjs"; 
+import {Router} from "express";
+import { fileURLToPath } from 'url';
+import expressSession from "express-session"; 
+import GoogleStrategy from "passport-google-oauth20";
+import passport from "passport"; 
+
+import cookieParser from "cookie-parser"; 
+const __filename = fileURLToPath(import.meta.url);
+const credentialsPath = path.join(path.dirname(__filename), '.credentials.development.json');
+async function loadSecretKey() {
+  try {
+    const credentialsData = await fs.promises.readFile(credentialsPath, 'utf8');
+    const credentials = JSON.parse(credentialsData);
+    return credentials.secretCookie;
+  } catch (error) {
+    console.error('Error loading secret key:', error);
+    // Handle error appropriately (e.g., exit process)
+  }
+}
+ 
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+}
+
+
+
+
+const router = express.Router(); 
 
 dotenv.config();
+
 const pool = mysql.createPool({
   host: process.env.host,
   user: process.env.user,
@@ -18,11 +50,37 @@ const pool = mysql.createPool({
 
 }).promise();
 
+import {createCats, updateCats, deleteCats,  createUsers, patchUserandEmail} from "./database.mjs"; 
+import {query, body, validationResult} from "express-validator"; 
+const app = express();
+app.use(expressSession({
+  secret: await loadSecretKey(),
+
+  
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
+    httpOnly: true,
+    sameSite: true,
+    secure: true,
+  },
+}))
+
+let validators = [
+ body("email").isEmail().withMessage("Email format is invalid"), 
+ body("password").isLength({min:5}).withMessage("Enter at least 5 characters") 
+]
+
+const loggingMiddleware = (req, res, next) => 
+  next(); 
+
+app.use(loggingMiddleware);
 const sql = async () => await pool.query("select * from cats"); 
 
 
 
-const app = express();
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -49,21 +107,67 @@ app.get("", (req, res) => {
 res.render("index");
 })
 
+app.get("/login", (req, res) => {
+  res.render("login");
+  
+})
+// Authentication Routes
+app.post('/login', 
+ 
+);
 
+// Protected Routes
  
 
+app.get("/cookie", async (req, res) => {
+ await loadSecretKey();
+res.cookie("userName", "Jake"); 
+  res.cookie("age", "20");
+  res.cookie("email", "Jake");
+  res.cookie("password", "Jake");
+  res.send("Works");
+}
+
+)
+
+app.delete("/cookie", async (req, res) => {
+ res.clearCookie("name"); 
+ res.clearCookie("age"); 
+ res.clearCookie("email"); 
+res.clearCookie("password");
+ 
+})
+app.get("/api/hello", (req, res) => {
+  res.write("<H1>FFF</h1>");
+})
 app.get("/api/cats", async (req, res) => {
 const cats = await pool.query("select * from cats").then((result) => {
+  
 res.json(result[0]);
 
 // To destructure this, you would const [rows], get the first item out of the variaable names. Write a function called get Notes
 
 
 }).catch((err) => {
-  console.err(err); 
+  console.error(err); 
 })
 
 })
+
+app.get("/api/cats/:id", async (req, res) => {
+  const id = req.params.id; 
+  const cats = await pool.query("select * from cats where id = ?", [id]).then((result) => {
+  
+    res.json(result[0]);
+    
+    // To destructure this, you would const [rows], get the first item out of the variaable names. Write a function called get Notes
+    
+    
+    }).catch((err) => {
+      console.error(err); 
+    })
+});
+
 
 app.patch("/api/cats/:id", async (req, res) => {
 const id = req.params.id; 
@@ -73,105 +177,43 @@ updateCats(label, breed, species, id);
 })
 
 
- app.get("/test", async (req, res) => {
-res.render("post")});
+
 
 app.get("/api/cats/add", async (req, res) => {
   res.render("addCats")});
 
-app.post("/api/cats", async(req, res) => {
+app.post("/api/cats", query("filter").isString().notEmpty(), async(req, res) => {
 let label = req.body.label; let breed = req.body.breed; let species= req.body.species;
   const cats1 = createCats(label, breed, species); 
   res.json(cats1);
 })
   
-  
-app.get("/addUser", async(req, res) => {
-  res.render("post");
+//Need a landing page for API users for the get request method. 
+
+app.get("/api/users/add", async(req, res) => {
+  res.render("addUsers");
 })
-app.get("/api/users/:id", (req, res) => {
-  const id = req.params.id;
-  if (!id || isNaN(id)) {
-    res.status(404).send("Not Found");
-    return; // Exit the function early to avoid potential errors
-  }
-  res.json(users[id]);
-});
-
-
-app.get("/api/users", (req, res) => {
-  const { query: { id } } = req; // Destructure directly for id
-
-  // Check if id is missing or not a number
-  if (!id || isNaN(id)) {
-    return res.status(400).send("Invalid user ID"); // Handle invalid format
-  }
-
-  // Convert id to a number for comparison
-  const userId = Number(id);
-
-  // Filter users by ID
-  const filteredUsers = users.filter(user => user.id === userId);
-
-  return res.json({ users: filteredUsers });
-});
-
-
-  
-
-  
-  app.get("/api/products", (req, res) => {
-    res.json(products);
+  app.post("/api/users",validators, async(req, res) => {
+    const errors = validationResult(req); 
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+   let {username, email, password} = req.body;
+   createUsers(username, email, password); 
+   res.json({username, email});
   })
-app.get("/api/products/:id", (req, res) => {
-  const id = req.params.id;
-  if (!id || isNaN(id)) {
-    res.status(404).send("Not Found");
-    return;
-  }
-  res.json(products[id]);
-});
-
-app.get("/api/products/:id/reviews", (req, res) => {
-  const id = req.params.id;
-  if (!id || isNaN(id)) {
-    res.status(404).send("Not Found");
-    return;
-  }
-  res.json(products[id].reviews); // Assuming products have reviews property
-});
-
-// ... other code ... (unchanged)
-
-//Adding in posts
-
-app.post("/api/users", async (req, res) => {
-  // Check if username exists in the request body
-  if (!req.body.username) {
-    return res.status(400).send("Missing username in request body");
-  }
 
  
 
-  app
-  // Create a new user object with the username from the request body
-  const newUser = {
- email: req.body.email, password: req.body.password,
-    username: req.body.username,
-  };
-
-  
-  // Handle the respons 
-
-  users.push(newUser);
- 
- 
-res.send(newUser);
-  // Send a response with the created user (without modifying the original array)
-  //res.json(newUser);
+app.patch("/api/users/:id", (req, res) => {
+  const id1 = req.params.id;
+  patchUserandEmail("SSS", "DDD", id1);
 
 })
 
+  
+
+ 
 
 
 
