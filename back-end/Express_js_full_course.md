@@ -24,3 +24,8 @@ If this condition fails, we will just return res.send(mockusers). If we only hav
 
 ## Post Requests
 You can send data in the body of the request. Once they are ready, they will make a request to the back-end. It'll make a post request to the server. That data is known as a request body. You use those terms synonymously, payload, request body. The back-end will take that, if it needs to do additional data, it'll do all of that, before it needs to send it to an external API source. It'll return a 201 response status code that means that the resource was created. On the browser there's no way to do the request.body. Different JavaScript codes with interacting with the API. We want to access the dta. 
+
+## Validation
+Let's say that you have a username form, you want to check that the length of that username is 32 or less. If you're validating why do you still need to validate on the server side? You can literally go on the network tab, inspect where it's being sent to, even the Thunder client, bypass the client-side validation. You need to make sure that you're validating on the server-side. More important than on the client-side. 
+
+Note to self, I am going to be following medium articles from here on out over youtube. I will be following the guide and I will be practicing with the outline from the medium articles instead of using their particular technology. This particular medium article is Express API Validation using Express-Validator, by Muhamad Arif Arrijal.   

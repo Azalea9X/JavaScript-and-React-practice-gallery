@@ -4,27 +4,21 @@ import dotenv from "dotenv";
 import fs from "fs"; 
 import fetch from "node-fetch";
 import mysql from "mysql2";
-import axios from "axios"; 
+import passport from 'passport';
 import bodyParser from "body-parser";
 import {Router} from "express";
 import { fileURLToPath } from 'url';
 import expressSession from "express-session"; 
-import GoogleStrategy from "passport-google-oauth20";
-import passport from "passport"; 
+ 
+ 
+import "./passport.js"; 
 
 import cookieParser from "cookie-parser"; 
 const __filename = fileURLToPath(import.meta.url);
 const credentialsPath = path.join(path.dirname(__filename), '.credentials.development.json');
-async function loadSecretKey() {
-  try {
-    const credentialsData = await fs.promises.readFile(credentialsPath, 'utf8');
-    const credentials = JSON.parse(credentialsData);
-    return credentials.secretCookie;
-  } catch (error) {
-    console.error('Error loading secret key:', error);
-    // Handle error appropriately (e.g., exit process)
-  }
-}
+import axios from "axios"; import cors from "cors"; import { OAuth2Strategy } from "passport-google-oauth";
+
+
  
 
 function ensureAuthenticated(req, res, next) {
@@ -53,8 +47,12 @@ const pool = mysql.createPool({
 import {createCats, updateCats, deleteCats,  createUsers, patchUserandEmail} from "./database.mjs"; 
 import {query, body, validationResult} from "express-validator"; 
 const app = express();
+app.use(passport.initialize());
+ 
+app.use(cors);
+app.use(passport.session());
 app.use(expressSession({
-  secret: await loadSecretKey(),
+  secret: process.env.client_secret,
 
   
   resave: false,
@@ -66,6 +64,16 @@ app.use(expressSession({
     secure: true,
   },
 }))
+
+
+
+const isLoggedIn = (req, res, next) => {
+  if (req.user) {
+      next();
+  } else {
+      res.sendStatus(401);
+  }
+}
 
 let validators = [
  body("email").isEmail().withMessage("Email format is invalid"), 
@@ -106,15 +114,7 @@ const products = [
 app.get("", (req, res) => {
 res.render("index");
 })
-
-app.get("/login", (req, res) => {
-  res.render("login");
-  
-})
-// Authentication Routes
-app.post('/login', 
  
-);
 
 // Protected Routes
  
@@ -137,6 +137,23 @@ app.delete("/cookie", async (req, res) => {
 res.clearCookie("password");
  
 })
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile'] }));
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+
+  app.get('/logout', function(req, res){
+    req.logout();
+    res.redirect('/');
+  });
+
+  
 app.get("/api/hello", (req, res) => {
   res.write("<H1>FFF</h1>");
 })
@@ -232,7 +249,7 @@ Now we need to set them somewhere. The most common place to set them is a .env f
 
 We are going to use ? for a prepared statements for the MYSQL. Since a select statement always returns an array, we are going to get an array. We want to return the first object out of that array. 
 
-What happens, if we put something that doesn't exist, we will get undefined. insertID is what the ID that we inserted. If we added to the database, we would see a new one. This might be fine. We can potentially return an object here. If we run it again it looks like the object comes out of the database. You can run that query against which note that it is in the ID. I am not going to make a separate file with the database code. Using the express server, he's going to make the server call an error in case he isn't connected to the database. 
+What happens, if we rsput something that doesn't exist, we will get undefined. insertID is what the ID that we inserted. If we added to the database, we would see a new one. This might be fine. We can potentially return an object here. If we run it again it looks like the object comes out of the database. You can run that query against which note that it is in the ID. I am not going to make a separate file with the database code. Using the express server, he's going to make the server call an error in case he isn't connected to the database. 
 
 */
 
